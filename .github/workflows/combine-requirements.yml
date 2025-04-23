@@ -2,7 +2,6 @@ name: Combine requirements.txt
 
 on:
   workflow_dispatch:  # Allows manual trigger (or API trigger)
-  # Removed the schedule trigger since you're using API calls to trigger the workflow
 
 jobs:
   combine:
@@ -22,7 +21,7 @@ jobs:
           mkdir temp_repos
           > combined_requirements.txt
 
-          # Iterate through the repos from GitHub secret
+          # Iterate through the repos from GitHub secret (REPO_LIST)
           echo "$REPO_LIST" | while read repo; do
             if [ -n "$repo" ]; then
               repo_name=$(basename "$repo" .git)
@@ -41,14 +40,10 @@ jobs:
       - name: Show combined requirements
         run: cat combined_requirements.txt
 
-      # Commit the combined_requirements.txt back to the current repo
-      - name: Commit and push combined requirements.txt
+      - name: Save combined requirements.txt
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           mv combined_requirements.txt requirements.txt
-          git add requirements.txt
-          git commit -m "Update combined requirements.txt"
-          git push
+          echo "Combined requirements.txt file saved locally in the repository."
+        # No commit or push to remote repository
         env:
           REPO_LIST: ${{ secrets.REPO_LIST }}  # GitHub secret storing the repo URLs
