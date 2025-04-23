@@ -1,62 +1,74 @@
-name: Combine requirements.txt
+name: Combine Requirements
 
 on:
-  workflow_dispatch:  # Allows manual trigger (or API trigger)
-  
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight UTC
+
 jobs:
-  combine:
+  combine-requirements:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout this repo
-        uses: actions/checkout@v3
+    - name: Checkout current repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
 
-      - name: Clone repos and combine requirements.txt
-        run: |
-          mkdir temp_repos
-          > combined_requirements.txt  # Clear out the combined_requirements.txt if it exists
-
-          # Iterate through the repos from GitHub secret (REPO_LIST)
-          echo "$REPO_LIST" | while read repo; do
-            if [ -n "$repo" ]; then
-              repo_name=$(basename "$repo" .git)
-              echo "Cloning $repo..."
-              git clone --depth 1 "$repo" "temp_repos/$repo_name"
-              
-              # Debug: List files in the cloned repo
-              echo "Files in $repo_name:"
-              ls -la "temp_repos/$repo_name"
-
-              if [ -f "temp_repos/$repo_name/requirements.txt" ]; then
-                echo "# From $repo_name" >> combined_requirements.txt
-                cat "temp_repos/$repo_name/requirements.txt" >> combined_requirements.txt
-                echo "" >> combined_requirements.txt
-              else
-                echo "No requirements.txt found in $repo_name"
-              fi
-            fi
-          done
-
-      - name: Show combined requirements
-        run: cat combined_requirements.txt
-
-      # Move combined_requirements.txt to requirements.txt in the repo
-      - name: Move combined_requirements.txt to requirements.txt
-        run: |
-          mv combined_requirements.txt requirements.txt
-          echo "requirements.txt file created."
-
-      # Verify that requirements.txt exists
-      - name: List files in the repo directory
-        run: |
-          echo "Listing files in the repository to verify the creation of requirements.txt"
-          ls -l
+    - name: Combine requirements
+      env:
+        REPO_LIST: ${{ secrets.REPO_LIST }}
+      run: |
+        # Create a temporary directory
+        mkdir -p tmp_repos
+        
+        # Initialize combined requirements file
+        echo "# Combined requirements from multiple repositories" > combined_requirements.txt
+        echo "# Generated on $(date)" >> combined_requirements.txt
+        echo "" >> combined_requirements.txt
+        
+        # Process each repository in REPO_LIST
+        IFS=$'\n'
+        for repo_url in $REPO_LIST; do
+          if [ -z "$repo_url" ]; then
+            continue
+          fi
           
-        # Saving the file in the repo's working directory
-        env:
-          REPO_LIST: ${{ secrets.REPO_LIST }}  # GitHub secret storing the repo URLs
+          echo "Processing repository: $repo_url"
+          
+          # Extract repo name
+          repo_name=$(basename "$repo_url" .git)
+          
+          # Clone the repository
+          git clone --depth 1 "$repo_url" "tmp_repos/$repo_name"
+          
+          # Check for requirements.txt
+          if [ -f "tmp_repos/$repo_name/requirements.txt" ]; then
+            echo "" >> combined_requirements.txt
+            echo "# From $repo_url" >> combined_requirements.txt
+            cat "tmp_repos/$repo_name/requirements.txt" >> combined_requirements.txt
+          else
+            echo "# No requirements.txt found in $repo_url" >> combined_requirements.txt
+          fi
+          
+          # Remove the cloned repository
+          rm -rf "tmp_repos/$repo_name"
+        done
+        
+        # Remove duplicates while preserving order and comments
+        awk '!seen[$0]++' combined_requirements.txt > temp.txt && mv temp.txt combined_requirements.txt
+        
+        # Clean up
+        rm -rf tmp_repos
+
+    - name: Commit and push changes
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add combined_requirements.txt
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update combined requirements" && git push)
