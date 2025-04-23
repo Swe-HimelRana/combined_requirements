@@ -2,7 +2,7 @@ name: Combine requirements.txt
 
 on:
   workflow_dispatch:  # Allows manual trigger (or API trigger)
-
+  
 jobs:
   combine:
     runs-on: ubuntu-latest
@@ -19,7 +19,7 @@ jobs:
       - name: Clone repos and combine requirements.txt
         run: |
           mkdir temp_repos
-          > combined_requirements.txt
+          > combined_requirements.txt  # Clear out the combined_requirements.txt if it exists
 
           # Iterate through the repos from GitHub secret (REPO_LIST)
           echo "$REPO_LIST" | while read repo; do
@@ -40,11 +40,18 @@ jobs:
       - name: Show combined requirements
         run: cat combined_requirements.txt
 
-      # Save the combined requirements.txt to the repo directory
-      - name: Save combined requirements.txt
+      # Move combined_requirements.txt to requirements.txt in the repo
+      - name: Move combined_requirements.txt to requirements.txt
         run: |
           mv combined_requirements.txt requirements.txt
-          echo "Combined requirements.txt file saved in the repository."
+          echo "requirements.txt file created."
+        
+      # Verify that requirements.txt exists
+      - name: List files in the repo directory
+        run: |
+          echo "Listing files in the repository to verify the creation of requirements.txt"
+          ls -l
+          
         # Saving the file in the repo's working directory
         env:
           REPO_LIST: ${{ secrets.REPO_LIST }}  # GitHub secret storing the repo URLs
