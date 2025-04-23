@@ -27,12 +27,17 @@ jobs:
               repo_name=$(basename "$repo" .git)
               echo "Cloning $repo..."
               git clone --depth 1 "$repo" "temp_repos/$repo_name"
+              
+              # Debug: List files in the cloned repo
+              echo "Files in $repo_name:"
+              ls -la "temp_repos/$repo_name"
+
               if [ -f "temp_repos/$repo_name/requirements.txt" ]; then
                 echo "# From $repo_name" >> combined_requirements.txt
                 cat "temp_repos/$repo_name/requirements.txt" >> combined_requirements.txt
                 echo "" >> combined_requirements.txt
               else
-                echo "No requirements.txt in $repo_name"
+                echo "No requirements.txt found in $repo_name"
               fi
             fi
           done
@@ -45,7 +50,7 @@ jobs:
         run: |
           mv combined_requirements.txt requirements.txt
           echo "requirements.txt file created."
-        
+
       # Verify that requirements.txt exists
       - name: List files in the repo directory
         run: |
