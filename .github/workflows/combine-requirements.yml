@@ -1,0 +1,54 @@
+name: Combine requirements.txt
+
+on:
+  workflow_dispatch:  # Allows manual trigger (or API trigger)
+  # Removed the schedule trigger since you're using API calls to trigger the workflow
+
+jobs:
+  combine:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Clone repos and combine requirements.txt
+        run: |
+          mkdir temp_repos
+          > combined_requirements.txt
+
+          # Iterate through the repos from GitHub secret
+          echo "$REPO_LIST" | while read repo; do
+            if [ -n "$repo" ]; then
+              repo_name=$(basename "$repo" .git)
+              echo "Cloning $repo..."
+              git clone --depth 1 "$repo" "temp_repos/$repo_name"
+              if [ -f "temp_repos/$repo_name/requirements.txt" ]; then
+                echo "# From $repo_name" >> combined_requirements.txt
+                cat "temp_repos/$repo_name/requirements.txt" >> combined_requirements.txt
+                echo "" >> combined_requirements.txt
+              else
+                echo "No requirements.txt in $repo_name"
+              fi
+            fi
+          done
+
+      - name: Show combined requirements
+        run: cat combined_requirements.txt
+
+      # Commit the combined_requirements.txt back to the current repo
+      - name: Commit and push combined requirements.txt
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mv combined_requirements.txt requirements.txt
+          git add requirements.txt
+          git commit -m "Update combined requirements.txt"
+          git push
+        env:
+          REPO_LIST: ${{ secrets.REPO_LIST }}  # GitHub secret storing the repo URLs
