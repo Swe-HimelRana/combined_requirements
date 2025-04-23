@@ -3,7 +3,7 @@ name: Combine Requirements
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * *' # Runs daily at midnight UTC
+    - cron: '0 0 * * *'
 
 jobs:
   combine-requirements:
@@ -23,48 +23,41 @@ jobs:
     - name: Combine requirements
       env:
         REPO_LIST: ${{ secrets.REPO_LIST }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Add authentication
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Create a temporary directory
         mkdir -p tmp_repos
         
-        # Initialize combined requirements file
         echo "# Combined requirements from multiple repositories" > combined_requirements.txt
         echo "# Generated on $(date)" >> combined_requirements.txt
         echo "" >> combined_requirements.txt
         
-        # Process each repository in REPO_LIST
         IFS=$'\n'
         for repo_url in $REPO_LIST; do
-          if [ -z "$repo_url" ]; then
-            continue
-          fi
+          [ -z "$repo_url" ] && continue
           
           echo "Processing repository: $repo_url"
           
-          # Extract repo name
-          repo_name=$(basename "$repo_url" .git)
+          # Clean the URL and extract path
+          clean_url="${repo_url/https:\/\//}"
+          clean_url="${clean_url/git:\/\//}"
+          repo_path="${clean_url#github.com/}"
+          repo_path="${repo_path%.git}"
+          repo_name=$(basename "$repo_path")
           
-          # Clone the repository with authentication
-          git clone --depth 1 "https://$GITHUB_TOKEN@github.com/${repo_url#*github.com/}" "tmp_repos/$repo_name"
+          # Clone with token authentication
+          git clone --depth 1 "https://x-access-token:$GITHUB_TOKEN@github.com/${repo_path}.git" "tmp_repos/$repo_name"
           
-          # Check for requirements.txt
           if [ -f "tmp_repos/$repo_name/requirements.txt" ]; then
-            echo "" >> combined_requirements.txt
-            echo "# From $repo_url" >> combined_requirements.txt
+            echo -e "\n# From $repo_url" >> combined_requirements.txt
             cat "tmp_repos/$repo_name/requirements.txt" >> combined_requirements.txt
           else
             echo "# No requirements.txt found in $repo_url" >> combined_requirements.txt
           fi
           
-          # Remove the cloned repository
           rm -rf "tmp_repos/$repo_name"
         done
         
-        # Remove duplicates while preserving order and comments
         awk '!seen[$0]++' combined_requirements.txt > temp.txt && mv temp.txt combined_requirements.txt
-        
-        # Clean up
         rm -rf tmp_repos
 
     - name: Commit and push changes
