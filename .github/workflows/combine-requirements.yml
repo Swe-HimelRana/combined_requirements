@@ -40,10 +40,11 @@ jobs:
       - name: Show combined requirements
         run: cat combined_requirements.txt
 
+      # Save the combined requirements.txt to the repo directory
       - name: Save combined requirements.txt
         run: |
           mv combined_requirements.txt requirements.txt
-          echo "Combined requirements.txt file saved locally in the repository."
-        # No commit or push to remote repository
+          echo "Combined requirements.txt file saved in the repository."
+        # Saving the file in the repo's working directory
         env:
           REPO_LIST: ${{ secrets.REPO_LIST }}  # GitHub secret storing the repo URLs
