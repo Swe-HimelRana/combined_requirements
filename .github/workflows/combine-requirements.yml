@@ -23,7 +23,7 @@ jobs:
     - name: Combine requirements
       env:
         REPO_LIST: ${{ secrets.REPO_LIST }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GH_SECRET }}
       run: |
         mkdir -p tmp_repos
         
