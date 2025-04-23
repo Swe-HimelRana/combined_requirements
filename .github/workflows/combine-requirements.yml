@@ -50,6 +50,7 @@ jobs:
           if [ -f "tmp_repos/$repo_name/requirements.txt" ]; then
             echo -e "\n# From $repo_url" >> combined_requirements.txt
             cat "tmp_repos/$repo_name/requirements.txt" >> combined_requirements.txt
+            cat combined_requirements.txt
           else
             echo "# No requirements.txt found in $repo_url" >> combined_requirements.txt
           fi
@@ -64,7 +65,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
+        git config --global user.name "Himel"
+        git config --global user.email "contact@himelrana.com"
         git add combined_requirements.txt
         git diff --quiet && git diff --staged --quiet || (git commit -m "Update combined requirements" && git push)
