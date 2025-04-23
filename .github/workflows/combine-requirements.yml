@@ -23,6 +23,7 @@ jobs:
     - name: Combine requirements
       env:
         REPO_LIST: ${{ secrets.REPO_LIST }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Add authentication
       run: |
         # Create a temporary directory
         mkdir -p tmp_repos
@@ -44,8 +45,8 @@ jobs:
           # Extract repo name
           repo_name=$(basename "$repo_url" .git)
           
-          # Clone the repository
-          git clone --depth 1 "$repo_url" "tmp_repos/$repo_name"
+          # Clone the repository with authentication
+          git clone --depth 1 "https://$GITHUB_TOKEN@github.com/${repo_url#*github.com/}" "tmp_repos/$repo_name"
           
           # Check for requirements.txt
           if [ -f "tmp_repos/$repo_name/requirements.txt" ]; then
@@ -67,6 +68,8 @@ jobs:
         rm -rf tmp_repos
 
     - name: Commit and push changes
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
