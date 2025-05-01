@@ -1,5 +1,5 @@
 # Combined requirements from multiple repositories
-# Generated on Wed Apr 30 00:31:55 UTC 2025
+# Generated on Thu May  1 00:35:59 UTC 2025
 
 # From https://github.com/Swe-HimelRana/Himosoft-SSO.git
 aiohappyeyeballs==2.6.1
@@ -24,7 +24,7 @@ future==1.0.0
 geoip2==5.0.1
 httpagentparser==1.9.5
 idna==3.10
-Jinja2==3.1.6
+importlib_metadata==8.6.1
 markdown-it-py==3.0.0
 MarkupSafe==3.0.2
 maxminddb==2.6.3
@@ -42,6 +42,7 @@ PyYAML==6.0.2
 qrcode==8.0
 requests==2.32.3
 rich==13.9.4
+scanreq==0.0.9
 six==1.17.0
 sqlparse==0.5.3
 stripe==12.0.0
@@ -54,3 +55,4 @@ ua-parser-rs==0.1.2
 urllib3==2.3.0
 user-agents==2.2.0
 yarl==1.18.3
+zipp==3.21.0
