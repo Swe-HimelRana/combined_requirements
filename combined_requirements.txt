@@ -1,5 +1,5 @@
 # Combined requirements from multiple repositories
-# Generated on Sun Jun  1 00:41:28 UTC 2025
+# Generated on Mon Jun  2 00:35:20 UTC 2025
 
 # From https://github.com/Swe-HimelRana/Himosoft-SSO.git
 aiohappyeyeballs==2.6.1
